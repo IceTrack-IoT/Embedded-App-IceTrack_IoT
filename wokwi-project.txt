@@ -1,0 +1,10 @@
+IceTrack ESP32 refrigeration-monitoring node
+
+This folder is a self-contained Wokwi project:
+  - diagram.json   hardware layout and wiring
+  - libraries.txt  Wokwi library dependencies
+  - sketch.ino     firmware entry point
+
+Import diagram.json on https://wokwi.com (or open the folder with the Wokwi VS
+Code extension if configured). The previous ToggableLedDevice example link was
+replaced by this IceTrack simulation.

@@ -1,0 +1,217 @@
+@startuml embedded-class-diagram
+title IceTrack ESP32 node - class diagram
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+package "Modest IoT Nano-framework (C++ Edition)" {
+  interface EventHandler
+  interface CommandHandler
+
+  abstract class Sensor {
+    #int pin
+    #EventHandler* handler
+    +on(Event)
+    +setHandler(EventHandler*)
+  }
+
+  abstract class Actuator {
+    #int pin
+    #CommandHandler* handler
+    +handle(Command)
+    +setHandler(CommandHandler*)
+  }
+
+  class Button {
+    +BUTTON_PRESSED_EVENT
+  }
+
+  class Led
+
+  abstract class Device {
+    +on(Event)*
+    +handle(Command)*
+  }
+
+  EventHandler <|.. Sensor
+  CommandHandler <|.. Actuator
+  Sensor <|-- Button
+  Actuator <|-- Led
+  EventHandler <|.. Device
+  CommandHandler <|.. Device
+}
+
+package "IceTrack application" {
+  class IceTrackDevice {
+    -Dht11Sensor dht
+    -LightSensor light
+    -PirSensor pir
+    -MaintenanceButton button
+    -StatusLed led
+    -Buzzer buzzer
+    -GatewayClient gateway
+    -TelemetryBuffer buffer
+    -GatewayDirectives directives
+    +begin()
+    +loop()
+    +on(Event)
+    +handle(Command)
+    -sampleSensors()
+    -attemptSend()
+    -registerFailure(reason)
+    -handleButtonLongPress()
+    -handleDirectives(GatewayDirectives)
+    -applyIndicators()
+  }
+
+  class Dht11Sensor {
+    +READING_EVENT
+    +READ_FAILED_EVENT
+    +update() bool
+    +getTemperatureC()
+    +getHumidityPct()
+    +getConsecutiveFailures()
+  }
+
+  class LightSensor {
+    +LIGHT_READING_EVENT
+    +update()
+    +getPercent()
+    +getRaw()
+  }
+
+  class PirSensor {
+    +PRESENCE_CHANGED_EVENT
+    +update()
+    +isPresent()
+    +isAvailable()
+  }
+
+  class MaintenanceButton {
+    +LONG_PRESS_EVENT
+    +begin()
+    +update()
+    +isPressed()
+  }
+
+  class StatusLed {
+    +NORMAL_COMMAND
+    +EXCURSION_COMMAND
+    +CONNECTION_LOST_COMMAND
+    +MAINTENANCE_COMMAND
+    +SIGNAL_TEST_COMMAND
+    +begin()
+    +update()
+  }
+
+  class Buzzer {
+    +ALARM_ON_COMMAND
+    +ALARM_OFF_COMMAND
+    +MUTE_COMMAND
+    +BEEP_ACTIVATED_COMMAND
+    +BEEP_DEACTIVATED_COMMAND
+    +BEEP_WARNING_COMMAND
+    +SIGNAL_TEST_COMMAND
+    +begin()
+    +update()
+  }
+
+  class GatewayClient {
+    -bool mockMode
+    -int lastStatus
+    +begin()
+    +update()
+    +isWifiConnected()
+    +postReading(TelemetryReading&, GatewayDirectives&) bool
+    +postButtonEvent(String, uint32_t, uint32_t, ButtonEventResult&) bool
+  }
+
+  class TelemetryBuffer {
+    -TelemetryReading items[512]
+    +push(TelemetryReading&)
+    +pop()
+    +peek()
+    +size()
+    +capacity()
+    +droppedCount()
+  }
+
+  class TelemetryReading <<struct>> {
+    +float temperatureC
+    +float humidityPct
+    +int lightPercent
+    +bool presence
+    +bool presenceAvailable
+    +bool sensorValid
+    +uint32_t sensorFailures
+    +uint32_t sequence
+    +uint32_t uptimeMs
+    +uint32_t capturedEpoch
+    +char readingUid[64]
+  }
+
+  class GatewayDirectives <<struct>> {
+    +bool alarmActive
+    +bool buzzerMuted
+    +bool signalTest
+    +bool maintenanceActive
+    +char maintenanceOrigin[12]
+    +char maintenanceExpiresAt[32]
+  }
+
+  class ButtonEventResult <<struct>> {
+    +ButtonFeedback feedback
+    +bool maintenanceActive
+    +char origin[12]
+    +char expiresAt[32]
+  }
+
+  class AppConfig <<namespace>> {
+    +WIFI_SSID
+    +GATEWAY_BASE_URL
+    +DEVICE_ID
+    +PIN_MAP
+    +TIMINGS_AND_LIMITS
+  }
+}
+
+Device <|-- IceTrackDevice
+
+Sensor <|-- Dht11Sensor
+Sensor <|-- LightSensor
+Sensor <|-- PirSensor
+Button <|-- MaintenanceButton
+Actuator <|-- StatusLed
+Actuator <|-- Buzzer
+
+IceTrackDevice *-- Dht11Sensor
+IceTrackDevice *-- LightSensor
+IceTrackDevice *-- PirSensor
+IceTrackDevice *-- MaintenanceButton
+IceTrackDevice *-- StatusLed
+IceTrackDevice *-- Buzzer
+IceTrackDevice *-- GatewayClient
+IceTrackDevice *-- TelemetryBuffer
+IceTrackDevice --> GatewayDirectives : applies
+IceTrackDevice ..> AppConfig : uses
+
+GatewayClient ..> TelemetryReading : posts
+GatewayClient ..> GatewayDirectives : parses
+GatewayClient ..> ButtonEventResult : parses
+TelemetryBuffer o-- TelemetryReading : stores
+
+Dht11Sensor ..> IceTrackDevice : READING / READ_FAILED events
+LightSensor ..> IceTrackDevice : LIGHT_READING event
+PirSensor ..> IceTrackDevice : PRESENCE_CHANGED event
+MaintenanceButton ..> IceTrackDevice : LONG_PRESS event
+IceTrackDevice ..> StatusLed : LED commands
+IceTrackDevice ..> Buzzer : buzzer commands
+
+note right of IceTrackDevice
+  CQRS-inspired flow:
+  Sensor --Event--> IceTrackDevice --Command--> Actuator
+  Telemetry --10 s--> RAM buffer --> LAN gateway
+end note
+
+@enduml

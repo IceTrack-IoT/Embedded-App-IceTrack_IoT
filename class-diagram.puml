@@ -1,0 +1,89 @@
+@startuml
+
+' Render base classes/interfaces at the top, descendants below (top-down hierarchy)
+top to bottom direction
+
+' Structs
+class Command {
+    int id
+    +Command(int commandId)
+    +operator==(const Command& other) : bool
+}
+class Event {
+    int id
+    +Event(int eventId)
+    +operator==(const Event& other) : bool
+}
+
+' Interfaces / Abstract Classes
+abstract class CommandHandler {
+    +handle(Command command)
+}
+abstract class EventHandler {
+    +on(Event event)
+}
+
+' Device (inherits from both interfaces)
+abstract class Device {
+    +on(Event event)
+    +handle(Command command)
+}
+Device -up-|> EventHandler
+Device -up-|> CommandHandler
+
+' Sensor (inherits from EventHandler)
+class Sensor {
+    protected int pin
+    protected EventHandler* handler
+    +Sensor(int pin, EventHandler* eventHandler = nullptr)
+    +on(Event event)
+}
+Sensor -up-|> EventHandler
+
+' Actuator (inherits from CommandHandler)
+class Actuator {
+    protected int pin
+    protected CommandHandler* handler
+    +Actuator(int pin, CommandHandler* commandHandler = nullptr)
+    +handle(Command command)
+}
+Actuator -up-|> CommandHandler
+
+' Button (inherits from Sensor)
+class Button {
+    static const int BUTTON_PRESSED_EVENT_ID
+    static const Event BUTTON_PRESSED_EVENT
+    +Button(int pin, EventHandler* eventHandler = nullptr)
+}
+Button -up-|> Sensor
+
+' Led (inherits from Actuator)
+class Led {
+    private bool state
+    static const int TOGGLE_LED_COMMAND_ID
+    static const int TURN_ON_COMMAND_ID
+    static const int TURN_OFF_COMMAND_ID
+    static const Command TOGGLE_LED_COMMAND
+    static const Command TURN_ON_COMMAND
+    static const Command TURN_OFF_COMMAND
+    +Led(int pin, bool initialState = false, CommandHandler* commandHandler = nullptr)
+}
+Led -up-|> Actuator
+
+' ToggableLedDevice (inherits from Device)
+class ToggableLedDevice {
+    private Button button
+    private Led led
+    static const int BUTTON_PIN
+    static const int LED_PIN
+    +ToggableLedDevice(int buttonPin = BUTTON_PIN, int ledPin = LED_PIN, bool initialLedState = false)
+    +on(Event event)
+    +handle(Command command)
+    +getLed() : Led&
+    +triggerButtonEvent(Event event)
+}
+ToggableLedDevice -up-|> Device
+ToggableLedDevice *-- Button : has
+ToggableLedDevice *-- Led : has
+
+@enduml

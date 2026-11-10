@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "author": "IceTrack",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht1", "top": -120, "left": 420, "attrs": { "temperature": "24", "humidity": "55" } },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr1",
+      "top": 60,
+      "left": 420,
+      "attrs": { "lux": "10", "threshold": "2.5" }
+    },
+    { "type": "wokwi-pir-motion-sensor", "id": "pir1", "top": 240, "left": 420, "attrs": { "delayTime": "5" } },
+    { "type": "wokwi-pushbutton", "id": "btn1", "top": 430, "left": 420, "attrs": { "color": "blue", "label": "MAINT 3s", "key": "b", "bounce": "0" } },
+    { "type": "wokwi-rgb-led", "id": "led1", "top": -90, "left": -330, "attrs": { "common": "anode" } },
+    { "type": "wokwi-resistor", "id": "r1", "top": 50, "left": -170, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r2", "top": 100, "left": -170, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r3", "top": 150, "left": -170, "attrs": { "value": "220" } },
+    { "type": "wokwi-buzzer", "id": "bz1", "top": 300, "left": -330, "attrs": { "volume": "0.4", "mode": "smooth" } }
+  ],
+  "connections": [
+    [ "esp:TX0", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX0", "$serialMonitor:TX", "", [] ],
+
+    [ "dht1:VCC", "esp:3V3", "red", [] ],
+    [ "dht1:SDA", "esp:D15", "green", [] ],
+    [ "dht1:GND", "esp:GND.1", "black", [] ],
+
+    [ "ldr1:VCC", "esp:3V3", "red", [] ],
+    [ "ldr1:GND", "esp:GND.2", "black", [] ],
+    [ "ldr1:AO", "esp:D34", "orange", [] ],
+
+    [ "pir1:VCC", "esp:VIN", "red", [] ],
+    [ "pir1:GND", "esp:GND.1", "black", [] ],
+    [ "pir1:OUT", "esp:D33", "cyan", [] ],
+
+    [ "btn1:1.l", "esp:D32", "blue", [] ],
+    [ "btn1:2.l", "esp:GND.2", "black", [] ],
+
+    [ "led1:COM", "esp:3V3", "red", [] ],
+    [ "r1:1", "esp:D25", "red", [] ],
+    [ "r1:2", "led1:R", "red", [] ],
+    [ "r2:1", "esp:D26", "green", [] ],
+    [ "r2:2", "led1:G", "green", [] ],
+    [ "r3:1", "esp:D27", "blue", [] ],
+    [ "r3:2", "led1:B", "blue", [] ],
+
+    [ "bz1:1", "esp:GND.1", "black", [] ],
+    [ "bz1:2", "esp:D14", "purple", [] ]
+  ],
+  "dependencies": {}
+}
